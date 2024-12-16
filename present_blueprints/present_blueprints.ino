@@ -92,9 +92,10 @@ int64_t release_callback(alarm_id_t id, __unused void *user_data) {
 }
 
 bool trig_callback(__unused struct repeating_timer *t) {
+    add_alarm_in_us(50000 - 750, release_callback, NULL, false);
     press_trig = true;
-    add_alarm_in_us(50000 - 125, release_callback, NULL, false);
     digitalWriteFast(LED_BUILTIN, HIGH);
+    // update the scrolling LEDs across the top
     marq_idx -= 1;
     if (marq_idx < 0) {
       marq_idx = 3;
