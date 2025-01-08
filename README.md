@@ -20,7 +20,7 @@ core 0:
 core 1:
   - UI updates (LEDs, screen, sound (in future))
 
-Messages are passed from core 0 to 1 via the [software FIFO](https://arduino-pico.readthedocs.io/en/latest/multicore.html#communicating-between-cores). The device state is packed into a struct comprised of [bit fields](https://en.cppreference.com/w/cpp/language/bit_field), which can be easily serialized/deserialized.
+Messages are passed from core 0 to 1 via the [hardware FIFO](https://arduino-pico.readthedocs.io/en/latest/multicore.html#communicating-between-cores). The device state is packed into a struct comprised of [bit fields](https://en.cppreference.com/w/cpp/language/bit_field), which can be easily serialized/deserialized.
 
 ### Build
 
@@ -48,6 +48,3 @@ I also left my initial CircuitPython implementation for reference. It got me ~90
  - Avoiding slowdowns due to UI updates. In the unoptimized CircuitPython version, I think the UI updates (+ garbage collection) could rarely take 10s to 100s of milliseconds, which doesn't work well for our use case. In the Arduino version, we can trivially use the second core for our UI, which frees the primary core for time-critical USB things. Could async have helped?
  - Customization of the USB device exposed to the computer. IIRC, I was having difficulties both setting the vendor/product names and changing the `bInterval` to 1.
  - Precise generation of the fake trigger. In CircuitPython, I was generating it synchronously as part of the entire event loop, and in Arduino we can use APIs like `add_repeating_timer_ms` to be more careful.
-
-It's possible that these issues had solutions/workarounds.
-
