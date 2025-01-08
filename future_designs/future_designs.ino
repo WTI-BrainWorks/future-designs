@@ -362,7 +362,7 @@ void loop1()
   display.clearDisplay();
   display.setContrast(0x7f);
   display.setCursor(0, 0);
-  display.print("Fake MRI");
+  display.print("Fut Designs");
   display.setCursor(8, 10);
   if (next_state.is_scanning) {
     display.print("Stop scan");

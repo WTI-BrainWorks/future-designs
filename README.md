@@ -1,4 +1,4 @@
-# Future Designs: An approximation of a Current Designs 932.
+# Future Designs: An emulated Current Designs 932 + button box.
 
 ![](media/overview_crop_resize.jpg)
 
