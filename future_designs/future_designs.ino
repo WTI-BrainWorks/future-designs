@@ -45,6 +45,8 @@ const uint32_t ON_COLOR = 0xffffff;
 const uint32_t ON_TR_COLOR = 0x880088;
 const uint32_t OFF_TR_COLOR = 0;
 const uint32_t TOP_ROW[4] = { 1, 4, 7, 10 }; // use these for signaling TRs
+const uint8_t NEO_ON = 0x80;
+const uint8_t NEO_IDLE = 0x08;
 bool upload_mode = true;
 
 
@@ -309,7 +311,7 @@ void setup1()
   digitalWriteFast(PIN_SPEAKER_ENABLE, HIGH);
   // set up neopixels
   pixels.begin();
-  pixels.setBrightness(255);
+  pixels.setBrightness(NEO_ON);
   pixels.show();
 }
 
@@ -326,7 +328,7 @@ void loop1()
     if (!is_cleared && elapsed >= TIME_UNTIL_DISPLAY_SLEEP_MS) {
       display.clearDisplay();
       display.setContrast(0);
-      pixels.setBrightness(0x20); // "idle" neopixels
+      pixels.setBrightness(NEO_IDLE); // "idle" neopixels
       display.display();
       pixels.show();
       is_cleared = true;
@@ -339,7 +341,7 @@ void loop1()
   State next_state = std::bit_cast<State>(msg);
 
   // fill in the LEDs
-  pixels.setBrightness(0xff);
+  pixels.setBrightness(NEO_ON);
   for(int i=0; i < N_KEYS; i++) {
     if (bit_check(next_state.key_state, i)) {
       pixels.setPixelColor(KEY_ORDER[i]-1, ON_COLOR);
