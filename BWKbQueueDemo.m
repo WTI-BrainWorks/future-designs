@@ -1,5 +1,5 @@
 
-function [times] = BWKbQueueDemo(index)
+function [times, durs] = BWKbQueueDemo(index, minutes)
 % To get the right index, use
 %
 %   idx = GetKeyboardIndices('Current Designs, Inc. 932');
@@ -15,10 +15,11 @@ KbName('UnifyKeyNames');
 KbQueueCreate(index);
 KbQueueStart(index);
 canary2 = onCleanup(@() KbQueueRelease(index));
-times = zeros(1000, 1);
+durs = zeros(10000, 1);
+times = zeros(10000, 1);
 
 t0 = GetSecs();
-t1 = t0 + 60;
+t1 = t0 + minutes*60;
 press_arr = zeros(256, 1);
 i = 1;
 while GetSecs() < t1
@@ -29,7 +30,7 @@ while GetSecs() < t1
        t = firstpress(idx) - t0;
        %fprintf('Pressed %s at %.5f\n', name, t);
        press_arr(idx) = t;
-       %times(i) = t;
+       times(i) = t;
    end
 
    if any(firstrelease)
@@ -42,12 +43,13 @@ while GetSecs() < t1
            press_arr(idx) = 0;
            dur = t - v;
            fprintf('Dur: %.5f\n', dur);
-           times(i) = dur;
+           durs(i) = dur;
            i = i + 1;
        end
    end
 end
 
 times = times(times > 0);
+durs = durs(durs > 0);
 
 end

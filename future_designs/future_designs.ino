@@ -34,13 +34,13 @@ inline T clamp(T n, T2 lower, T2 upper) {
 bool core1_separate_stack = true; // 8KB stack per core (necessary?)
 const uint32_t TIME_UNTIL_DISPLAY_SLEEP_MS = 5*60*1000; // turn off display after Xs of total inactivity
 const uint32_t DEFAULT_TR_US = 2 * 1000 * 1000;
-const uint8_t N_KEYS = 4; // number of physical keys
-const uint8_t KEY_ORDER[4] = { 12, 9, 3, 6 }; // 1-indexed to match digital pin # (e.g. upper left switch is apparently tied to digital pin 1)
+const uint8_t N_KEYS = 5; // number of physical keys
+const uint8_t KEY_ORDER[5] = { 12, 9, 3, 6, 10 }; // 1-indexed to match digital pin # (e.g. upper left switch is apparently tied to digital pin 1)
 const uint8_t CODES[2][5] = {
   { HID_KEY_B, HID_KEY_Y, HID_KEY_R, HID_KEY_G, HID_KEY_T },
   { HID_KEY_1, HID_KEY_2, HID_KEY_4, HID_KEY_3, HID_KEY_5 }
 };
-const uint32_t OFF_COLORS[4] = { 0x0000ff, 0xffff00, 0xff0000, 0x00ff00 }; // blue, yellow, red, green
+const uint32_t OFF_COLORS[5] = { 0x0000ff, 0xffff00, 0xff0000, 0x00ff00, 0xff00ff }; // blue, yellow, red, green, purple
 const uint32_t ON_COLOR = 0xffffff;
 const uint32_t ON_TR_COLOR = 0x880088;
 const uint32_t OFF_TR_COLOR = 0;
@@ -52,10 +52,9 @@ bool upload_mode = true;
 // key state (for LEDs)
 struct State {
   int8_t submenu_sel : 5; // max size to acommodate TR interval selection of -15 to +10 (i.e. 0.5 to 3s in 0.1s intervals)
-  uint8_t current_key_state : 5; // one bit per switch. We'll do the TR blink on core0 for ease
+  uint8_t key_state : 5; // one bit per switch. We'll do the TR blink on core0 for ease
   int8_t tr_interval : 5; // signed int, 0.1s steps relative to 2.0sec
   int8_t menu_sel : 3;
-  uint8_t marq_idx : 2;
   uint8_t is_nar : 1;
   uint8_t is_number : 1;
   uint8_t in_submenu : 1;
@@ -83,7 +82,6 @@ void checkPosition() {  encoder.tick(); } // just call tick() to check the state
 // use a negative value to indicate that subsequent 
 struct repeating_timer trig_timer;
 volatile bool press_trig = false;
-volatile int8_t marq_idx = 0;
 
 int64_t release_callback(alarm_id_t id, __unused void *user_data) {
   press_trig = false;
@@ -92,14 +90,9 @@ int64_t release_callback(alarm_id_t id, __unused void *user_data) {
 }
 
 bool trig_callback(__unused struct repeating_timer *t) {
-    add_alarm_in_us(50000 - 750, release_callback, NULL, false);
+    add_alarm_in_us(50000 - 500, release_callback, NULL, false);
     press_trig = true;
     digitalWriteFast(LED_BUILTIN, HIGH);
-    // update the scrolling LEDs across the top
-    marq_idx -= 1;
-    if (marq_idx < 0) {
-      marq_idx = 3;
-    }
     return true;
 }
 
@@ -161,7 +154,7 @@ void loop()
 
   // figure out what keys to send
   for (uint8_t i = 0; i < N_KEYS; i++) {
-    if (!digitalReadFast(KEY_ORDER[i])) {
+    if (!digitalReadFast(KEY_ORDER[i]) || (i == 4 && press_trig)) {
       if (state.is_nar) {
         keycodes[count++] = CODES[state.is_number][i];
         current_key_state = bit_set(current_key_state, i);
@@ -182,26 +175,7 @@ void loop()
     }
   }
 
-  // essentially same logic as above, just applied to 
-  if (press_trig) {
-    if (state.is_nar) {
-      keycodes[count++] = CODES[state.is_number][4];
-      current_key_state = bit_set(current_key_state, 4);
-    } else { // autorelease
-      // check if the proposed keycode is on the ignore list
-      // it wasn't on the ignore list, add it now
-      if (!bit_check(ignore_pos, 4)) {
-        keycodes[count++] = CODES[state.is_number][4];
-        ignore_pos = bit_set(ignore_pos, 4);
-        current_key_state = bit_set(current_key_state, 4);
-      }
-    }
-  } else {
-    if (!state.is_nar) { // autorelease
-      // key isn't down, remove from ignore list
-      ignore_pos = bit_clear(ignore_pos, 4);
-    }
-  }
+  // essentially same logic as above, just applied to trigger
 
   // wake up if suspended, check if ready
   if (!ready_hid(count > 0)) {
@@ -296,10 +270,9 @@ void loop()
   }
 
   // all done, send a message to wake/update the UI
-  state.current_key_state = current_key_state;
+  state.key_state = current_key_state;
   state.menu_sel = menu_sel;
   state.submenu_sel = submenu_sel; // a sanitized version that should fit in 5 bits
-  state.marq_idx = marq_idx;
   uint32_t msg = std::bit_cast<uint32_t>(state);
   uint32_t last_msg = std::bit_cast<uint32_t>(prev_state);
   if (msg != last_msg) {
@@ -345,6 +318,8 @@ void loop1()
   uint32_t t0 = millis();
   bool is_cleared = false;
   static uint8_t tr_key_idx = 0;
+  static uint32_t tr_count = 0;
+  static State last_state{};
   while (!rp2040.fifo.available()) {
     delay(10);
     uint32_t elapsed = millis() - t0;
@@ -366,19 +341,21 @@ void loop1()
   // fill in the LEDs
   pixels.setBrightness(0xff);
   for(int i=0; i < N_KEYS; i++) {
-    if (bit_check(next_state.current_key_state, i)) {
+    if (bit_check(next_state.key_state, i)) {
       pixels.setPixelColor(KEY_ORDER[i]-1, ON_COLOR);
     } else {
       pixels.setPixelColor(KEY_ORDER[i]-1, OFF_COLORS[i]);
     }
   }
 
-  // fill in lights for TR
-  for (int i=0; i < N_KEYS; i++) {
-    pixels.setPixelColor(TOP_ROW[i]-1, OFF_TR_COLOR);
-  }
+  // compute TR count
   if (next_state.is_scanning) {
-    pixels.setPixelColor(TOP_ROW[next_state.marq_idx]-1, ON_TR_COLOR);
+    if (bit_check(next_state.key_state, 4) && !bit_check(last_state.key_state, 4)) {
+      // increment on "press"
+      tr_count++;
+    }
+  } else {
+    tr_count = 0;
   }
 
 
@@ -412,6 +389,12 @@ void loop1()
   display.setCursor(8, 40);
   display.print("Reset");
 
+  if (next_state.is_scanning) {
+    display.setCursor(8, 50);
+    display.print("#TR: ");
+    display.print(tr_count);
+  }
+
   // update cursor
   display.setCursor(0, 10 + 10*next_state.menu_sel);
   if (next_state.in_submenu || next_state.is_scanning) {
@@ -437,6 +420,7 @@ void loop1()
   #endif
 
   display.display();
+  last_state = next_state;
   delay(10);
 }
 
@@ -462,8 +446,11 @@ void setup_hid()
   // Setup HID
   usb_hid.setPollInterval(1);
   usb_hid.setReportDescriptor(desc_hid_report, sizeof(desc_hid_report));
-  TinyUSBDevice.setManufacturerDescriptor("Current Designs, Inc.");
-  TinyUSBDevice.setProductDescriptor("932");
+  if (!upload_mode) {
+    TinyUSBDevice.setManufacturerDescriptor("Current Designs, Inc.");
+    TinyUSBDevice.setProductDescriptor("932");
+    TinyUSBDevice.setID(0x181b, 0x0008);
+  }
   usb_hid.begin();
   // If already enumerated, additional class driver begin() e.g msc, hid, midi won't take effect until re-enumeration
   if (TinyUSBDevice.mounted()) {
