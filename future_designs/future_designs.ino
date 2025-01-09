@@ -156,6 +156,7 @@ void loop()
 
   // figure out what keys to send
   for (uint8_t i = 0; i < N_KEYS; i++) {
+    // note the special logic to handle the automatic trigger key
     if (!digitalReadFast(KEY_ORDER[i]) || (i == 4 && press_trig)) {
       if (state.is_nar) {
         keycodes[count++] = CODES[state.is_number][i];
@@ -176,8 +177,6 @@ void loop()
       }
     }
   }
-
-  // essentially same logic as above, just applied to trigger
 
   // wake up if suspended, check if ready
   if (!ready_hid(count > 0)) {
@@ -300,8 +299,8 @@ Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUM_NEOPIXEL, PIN_NEOPIXEL, NEO_GRB
 void setup1()
 {
   // Start OLED
-  display.setRotation(3); // 270deg?
-  display.begin(0, true); // we dont use the i2c address but we will reset!
+  display.setRotation(3); // 270deg rotation
+  display.begin(0, true); // we don't use the i2c address, but we will reset!
   display.display();
   display.setTextSize(1);
   display.setTextWrap(false);
@@ -448,6 +447,8 @@ void setup_hid()
   // Setup HID
   usb_hid.setPollInterval(1);
   usb_hid.setReportDescriptor(desc_hid_report, sizeof(desc_hid_report));
+  // Only set the Current Designs descriptors/IDs in regular mode.
+  // Setting these during development breaks auto-detection by the Arduino IDE
   if (!upload_mode) {
     TinyUSBDevice.setManufacturerDescriptor("Current Designs, Inc.");
     TinyUSBDevice.setProductDescriptor("932");
