@@ -1,4 +1,4 @@
-# Future Designs: An emulated Current Designs 932 + button box.
+# Future Designs: An emulated Current Designs 932 + button box + trigger.
 
 ![](media/overview_crop_resize.jpg)
 

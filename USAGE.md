@@ -23,7 +23,7 @@ We developed the [Future Designs](https://github.com/BrainWorks/future-designs) 
 
 3. The response keys, from left to right, are `B`/`1`, `Y`/`2`, `G`/`3`, and `R`/`4`.
 
-4. The trigger key is `T`/`5`, and is either automatically triggered by selecting `Strt Scan`, or manually triggered by pressing directly.
+4. The trigger key is `T`/`5`, and is either automatically triggered by selecting `Strt Scan`, or manually triggered by pressing the purple key.
 
 ### Additional notes
 

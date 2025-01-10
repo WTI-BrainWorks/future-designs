@@ -1,6 +1,6 @@
 
 function [times, durs] = BWKbQueueDemo(index, minutes)
-% To get the right index, use
+% To get the correct device index, use
 %
 %   idx = GetKeyboardIndices('Current Designs, Inc. 932');
 %
