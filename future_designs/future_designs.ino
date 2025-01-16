@@ -45,6 +45,7 @@ const uint32_t ON_COLOR = 0xffffff;
 const uint32_t ON_TR_COLOR = 0x880088;
 const uint32_t OFF_TR_COLOR = 0;
 const uint32_t TR_HOLD_US = 20 * 1000; // 20ms
+const uint32_t TR_PRE_FRAME_US = 550;
 const uint8_t NEO_ON = 0x80;
 const uint8_t NEO_IDLE = 0x08;
 bool upload_mode = true;
@@ -92,7 +93,7 @@ int64_t release_callback(alarm_id_t id, __unused void *user_data) {
 }
 
 bool trig_callback(__unused struct repeating_timer *t) {
-    add_alarm_in_us(TR_HOLD_US - 375, release_callback, NULL, false);
+    add_alarm_in_us(TR_HOLD_US - TR_PRE_FRAME_US, release_callback, NULL, false);
     press_trig = true;
     digitalWriteFast(LED_BUILTIN, HIGH);
     return true;
