@@ -35,16 +35,16 @@ bool core1_separate_stack = true; // 8KB stack per core (necessary?)
 const uint32_t TIME_UNTIL_DISPLAY_SLEEP_MS = 5*60*1000; // turn off display after Xs of total inactivity
 const uint32_t DEFAULT_TR_US = 2 * 1000 * 1000;
 const uint8_t N_KEYS = 5; // number of physical keys
-const uint8_t KEY_ORDER[5] = { 12, 9, 3, 6, 10 }; // 1-indexed to match digital pin # (e.g. upper left switch is apparently tied to digital pin 1)
-const uint8_t CODES[2][5] = {
+const uint8_t KEY_ORDER[N_KEYS] = { 12, 9, 3, 6, 10 }; // 1-indexed to match digital pin # (e.g. upper left switch is apparently tied to digital pin 1)
+const uint8_t CODES[2][N_KEYS] = {
   { HID_KEY_B, HID_KEY_Y, HID_KEY_R, HID_KEY_G, HID_KEY_T },
   { HID_KEY_1, HID_KEY_2, HID_KEY_4, HID_KEY_3, HID_KEY_5 }
 };
-const uint32_t OFF_COLORS[5] = { 0x0000ff, 0xffff00, 0xff0000, 0x00ff00, 0xff00ff }; // blue, yellow, red, green, purple
+const uint32_t OFF_COLORS[N_KEYS] = { 0x0000ff, 0xffff00, 0xff0000, 0x00ff00, 0xff00ff }; // blue, yellow, red, green, purple
 const uint32_t ON_COLOR = 0xffffff;
 const uint32_t ON_TR_COLOR = 0x880088;
 const uint32_t OFF_TR_COLOR = 0;
-const uint32_t TOP_ROW[4] = { 1, 4, 7, 10 }; // use these for signaling TRs
+const uint32_t TR_HOLD_US = 20 * 1000; // 20ms
 const uint8_t NEO_ON = 0x80;
 const uint8_t NEO_IDLE = 0x08;
 bool upload_mode = true;
@@ -92,7 +92,7 @@ int64_t release_callback(alarm_id_t id, __unused void *user_data) {
 }
 
 bool trig_callback(__unused struct repeating_timer *t) {
-    add_alarm_in_us(50000 - 500, release_callback, NULL, false);
+    add_alarm_in_us(TR_HOLD_US - 375, release_callback, NULL, false);
     press_trig = true;
     digitalWriteFast(LED_BUILTIN, HIGH);
     return true;
@@ -157,8 +157,9 @@ void loop()
   // figure out what keys to send
   for (uint8_t i = 0; i < N_KEYS; i++) {
     // note the special logic to handle the automatic trigger key
-    if (!digitalReadFast(KEY_ORDER[i]) || (i == 4 && press_trig)) {
-      if (state.is_nar) {
+    bool is_auto_trig = (i == 4 && press_trig);
+    if (!digitalReadFast(KEY_ORDER[i]) || is_auto_trig) {
+      if (state.is_nar || is_auto_trig) {
         keycodes[count++] = CODES[state.is_number][i];
         current_key_state = bit_set(current_key_state, i);
       } else { // autorelease
