@@ -7,18 +7,24 @@ We developed the [Future Designs](https://github.com/BrainWorks/future-designs) 
 ![Future Designs layout](media/932_annotely_image.jpeg)
 
 1. You can control the menu with the dial (2). The menu options are:
+
     a. `Strt Scan`: Start or stop trigger simulation. When selected, this will send periodic `T`s or `5`s to the computer, depending on the button box mode.
+
     b. `TR: X.XXs`: Set the TR interval of the simulated triggers in 0.1s steps (range 0.5-3.0s).
+
     c. `M`: Change the button box mode. Options match those available through the 932 and are:
+
         - `BYRGT` (Letters, autorelease)
         - `12345` (Numbers, autorelease)
         - `NAR B` (Letters, no autorelease)
         - `NAR 1` (Numbers, no autorelease)
+    
     d. `Reset`: Reset to the default settings.
     
     Additionally, a running TR count will be shown at the bottom of the menu when `Strt Scan` is selected.
 
 2. You can turn menu control clockwise or counterclockwise, and press to select an option. When one of the menu options is selected, the `>` will turn into a `*` and turning will cycle through submenu options. You can confirm the submenu option by pressing the control knob again.
+
     - For example, selecting the `M` row and turning clockwise will cycle through the mode options.
 
 3. The response keys, from left to right, are `B`/`1`, `Y`/`2`, `G`/`3`, and `R`/`4`.
