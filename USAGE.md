@@ -33,7 +33,7 @@ We developed the [Future Designs](https://github.com/BrainWorks/future-designs) 
 
 ### Additional notes
 
- - When initially connecting the keyboard to a Mac, you may get prompted with a "Identify your keyboard layout" question. You can ignore and close this dialog.
+ - When initially connecting the keyboard to a Mac, you may get prompted with a "Allow accessory to connect?" prompt. Please click "Allow". You may also get prompted with a "Identify your keyboard layout" question. You can ignore and close this dialog.
 
  - When idle for more than a few minutes, the Future Designs display will turn off and the button LEDs will dim. You can wake the device by pressing any of the keys or turning the dial.
 
